@@ -1,140 +1,171 @@
-import pandas as pd
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-# Load dataset
-df = pd.read_csv("student_data.csv")
-
-print("Initial Dataset Shape:", df.shape)
-print("\n")
-
-# 1. Display first 5 rows
-print("1. Head of Dataset")
+# 1. head() command
+print("\n1. head() - First 5 rows:")
 print(df.head())
-print("\n")
+print()
 
-# 2. Dataset info
-print("2. Dataset Info")
-print(df.info())
-print("\n")
+# 2. info() command
+print("2. info() - Dataset information:")
+df.info()
+print()
 
-# 3. Rename columns (make lowercase)
-df.columns = [col.lower() for col in df.columns]
-print("3. Renamed Columns")
-print(df.columns)
-print("\n")
+# 3. describe() command
+print("3. describe() - Statistical summary:")
+print(df.describe())
+print()
 
-# 4. Check missing values
-print("4. Missing Values Count")
+# 4. shape command
+print("4. shape - Dataset dimensions:")
+print(f"Rows: {df.shape[0]}, Columns: {df.shape[1]}")
+print()
+
+# 1. Data Cleaning Techniques: 
+Technique 1: Missing Values Check
+print("Missing Values Per Column:")
 print(df.isnull().sum())
-print("\n")
 
-# 5. Fill missing values with mean (numeric only)
-df.fillna(df.mean(numeric_only=True), inplace=True)
-print("5. Missing Values Filled (Mean)")
-print(df.tail())
-print("\n")
+#Technique 2: Duplicate Detection
+dup_count = df.duplicated().sum()
+print("Total Duplicate Rows:", dup_count
 
-# 6. Remove duplicate rows
+
+
+# Technique 3: Duplicate Removal
 df.drop_duplicates(inplace=True)
-print("6. Duplicates Removed - Shape")
-print(df.shape)
-print("\n")
+print("Shape after removing duplicates:", df.shape)
 
-# 7. Detect outliers using IQR (example on first numeric column)
-num_col = df.select_dtypes(include=np.number).columns[0]
-Q1 = df[num_col].quantile(0.25)
-Q3 = df[num_col].quantile(0.75)
-IQR = Q3 - Q1
-df = df[(df[num_col] >= Q1 - 1.5 * IQR) & (df[num_col] <= Q3 + 1.5 * IQR)]
-print(f"7. Outliers Removed from column '{num_col}'")
-print(df.tail())
-print("\n")
+# Technique 4: Column Standardization
+df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
+print("Standardized Columns:")
+print(df.columns.tolist())
 
-# 8. Data type conversion (if any object numeric)
-for col in df.columns:
-    if df[col].dtype == 'object':
-        try:
-            df[col] = pd.to_numeric(df[col])
-        except:
-            pass
-print("8. Data Type Conversion Attempted")
-print(df.dtypes)
-print("\n")
+#Technique 5: Data Type Correction
+df['age'] = pd.to_numeric(df['age'], errors='coerce')
+df['balance'] = pd.to_numeric(df['balance'], errors='coerce')
+print(df[['age', 'balance']].dtypes)
 
-# 9. Feature scaling (Min-Max)
-num_cols = df.select_dtypes(include=np.number).columns
-df[num_cols] = (df[num_cols] - df[num_cols].min()) / (df[num_cols].max() - df[num_cols].min())
-print("9. Min-Max Scaling Applied")
-print(df.tail())
-print("\n")
+#2. Data Transformation Techniques: 
 
-# 10. Normalization (L2 norm)
-df[num_cols] = df[num_cols].div(np.sqrt((df[num_cols] ** 2).sum(axis=1)), axis=0)
-print("10. Normalization Applied")
-print(df.tail())
-print("\n")
+#Technique 6: Date Feature Extraction
 
-# 11. Binning (first numeric column)
-df[num_col + "_bin"] = pd.cut(df[num_col], bins=3, labels=["Low", "Medium", "High"])
-print("11. Binning Applied")
-print(df[[num_col, num_col + "_bin"]].tail())
-print("\n")
+df['date'] = pd.date_range(start='2020-01-01', periods=len(df), freq='D')
 
-# 12. Aggregation (mean of numeric columns)
-print("12. Aggregation - Mean")
-print(df[num_cols].mean())
-print("\n")
+df['year'] = df['date'].dt.year
+df['month'] = df['date'].dt.month
+df['day'] = df['date'].dt.day
+df['day_name'] = df['date'].dt.day_name()
+print(df[['date', 'year', 'month', 'day', 'day_name']].head())
 
-# 13. Mean calculation
-print("13. Mean")
-print(df[num_cols].mean())
-print("\n")
+# Technique 7: Time Feature Extraction
+# Dummy time column
+df['time'] = pd.to_datetime(
+    np.random.randint(0, 24, size=len(df)),
+    unit='h'
+).strftime('%H:%M:%S') # Removed .dt here
+df['hour'] = pd.to_datetime(df['time'], format='%H:%M:%S').dt.hour
+print(df[['time', 'hour']].head())
 
-# 14. Median calculation
-print("14. Median")
-print(df[num_cols].median())
-print("\n")
+# Technique 8: Time Categorization
+def time_category(hour):
+    if hour < 12:
+        return 'Morning'
+    elif hour < 17:
+        return 'Afternoon'
+    else:
+        return 'Night'
+df['time_category'] = df['hour'].apply(time_category)
+print(df['time_category'].value_counts())
 
-# 15. Mode calculation
-print("15. Mode")
-print(df.mode().head())
-print("\n")
+# Technique 9: Binary Encoding
+df['y_binary'] = df['deposit'].apply(lambda x: 1 if x == 'yes' else 0)
+print(df[['deposit', 'y_binary']].head())
 
-# 16. One-Hot Encoding (first categorical column if exists)
-cat_cols = df.select_dtypes(include='object').columns
-if len(cat_cols) > 0:
-    df = pd.get_dummies(df, columns=[cat_cols[0]])
-    print("16. One-Hot Encoding Applied")
-    print(df.tail())
-else:
-    print("16. No Categorical Column for One-Hot Encoding")
-print("\n")
-df.fillna(df.mean(numeric_only=True), inplace=True)
 
-print("17. Histogram of Age")
-plt.figure()
-plt.hist(df['age'])
-plt.xlabel("Age")
-plt.ylabel("Frequency")
-plt.title("Histogram of Age")
+#3. Feature Engineering Techniques: 
+
+# Technique 10: Price Categorization (Balance)
+def balance_category(balance):
+    if balance < 0:
+        return 'Low'
+    elif balance < 5000:
+        return 'Medium'
+    else:
+        return 'High'
+
+df['balance_category'] = df['balance'].apply(balance_category)
+print(df['balance_category'].value_counts())
+
+
+# Technique 11: Coffee Grouping (Text Grouping using job)
+def job_group(job):
+    job = job.lower()
+    if 'admin' in job:
+        return 'Admin'
+    elif 'tech' in job:
+        return 'Technical'
+    else:
+        return 'Other'
+
+df['job_group'] = df['job'].apply(job_group)
+print(df[['job', 'job_group']].head())
+
+# Technique 12: Peak Hour Indicator
+peak_hours = [9, 10, 11, 16, 17]
+df['peak_hour'] = df['hour'].apply(lambda x: 1 if x in peak_hours else 0)
+
+print(df['peak_hour'].value_counts())
+
+# Technique 13: Daily Sales Totals
+daily_sales = df.groupby('date')['balance'].sum().reset_index()
+df = df.merge(daily_sales, on='date', suffixes=('', '_daily_total'))
+
+print(df[['date', 'balance_daily_total']].head())
+
+# 4. Exploratory Data Analysis: 
+
+# Technique 14: Sales Distribution Histogram
+plt.figure(figsize=(7,4))
+plt.hist(df['balance'], bins=30, edgecolor='black')
+plt.title('Balance Distribution')
 plt.show()
 
-print("19. Scatter Plot: Study Time vs Final Grade")
-
-plt.figure()
-plt.scatter(df['studytime'], df[grade_col])
-plt.xlabel("Study Time")
-plt.ylabel("Final Grade")
-plt.title("Study Time vs Final Grade")
+# Technique 15: Popular Category Bar Chart
+df['job'].value_counts().head(10).plot(kind='bar', figsize=(7,4))
+plt.title('Top 10 Jobs')
 plt.show()
 
-print("20. Bar Chart: Average Final Grade by Gender")
+# Technique 16: Daily Trend Line Chart
 
-avg_grade_gender = df.groupby('sex')[grade_col].mean()
-plt.figure()
-plt.bar(avg_grade_gender.index, avg_grade_gender.values)
-plt.xlabel("Gender")
-plt.ylabel("Average Final Grade")
-plt.title("Average Final Grade by Gender")
+df.groupby('date')['balance'].sum().head(30).plot(kind='line', figsize=(9,4))
+plt.title('Daily Balance Trend')
 plt.show()
+
+
+
+# Technique 17: Correlation Heatmap
+plt.figure(figsize=(10,6))
+sns.heatmap(df.select_dtypes(include='number').corr(), annot=True, cmap='coolwarm')
+plt.title('Correlation Heatmap')
+plt.show()
+
+# 5. Text Data Techniques: 
+Technique 18: Text Length Analysis
+df['job_length'] = df['job'].str.len()
+print(df['job_length'].describe())
+
+plt.hist(df['job_length'], bins=20, edgecolor='black')
+plt.title('Job Text Length Distribution')
+plt.show()
+
+# Technique 19: Word Frequency Analysis
+words = ' '.join(df['job']).lower().split()
+word_freq = Counter(words)
+
+print("Top 10 Most Common Words:")
+print(word_freq.most_common(10))
+
+# Technique 20: One-Hot Encoding
+df_encoded = pd.get_dummies(df, columns=['job', 'marital', 'education'], drop_first=True)
+
+print("Encoded Dataset Shape:", df_encoded.shape)
+df_encoded.head()
+
